@@ -352,7 +352,6 @@ public class Game {
         pipeSpawnTime = ((pipeGap + pipeSpawnArea) / pipeGap) * pipeSpawnInterval;
 
         for(Pipe pipe : pipesToRender){
-            pipe.updateView();
             gameArea.getChildren().add(pipe.getView());
         }
         pipesToRender.clear();
@@ -363,4 +362,5 @@ public class Game {
     public Pane getRoot(){
         return root;
     }
+
 }
