@@ -1,9 +1,7 @@
 package com.flappyBird;
 
-import com.flappyBird.Game;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
