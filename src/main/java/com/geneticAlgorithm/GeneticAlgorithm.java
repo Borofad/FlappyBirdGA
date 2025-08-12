@@ -6,7 +6,7 @@ public class GeneticAlgorithm {
     private static final int SURVIVORS = 20;
     private static final int TOURNAMENT_SIZE = 3;
     private static double mutationRate = 0.05;
-    private static final double MUTATION_STRENGTH = 0.2;
+    private static double mutationStrength = 0.2;
     public static <T extends GeneticClient> void evolve(List<T> clients){
         Queue<T> pq = new PriorityQueue<>(Comparator.comparingInt(GeneticClient::getScore));
         for(T client : clients){
@@ -30,10 +30,10 @@ public class GeneticAlgorithm {
             int[] NETWORK_LAYER_SIZES = clients.get(0).getNetwork().getNETWORK_LAYER_SIZES();
             for(int layer = 1; layer < NETWORK_LAYER_SIZES.length; layer++){
                 for(int neuron = 0; neuron < NETWORK_LAYER_SIZES[layer]; neuron++){
-                    client.getNetwork().getBiases()[layer][neuron] += Math.random() <= mutationRate ? random.nextGaussian() * MUTATION_STRENGTH : 0;
+                    client.getNetwork().getBiases()[layer][neuron] += Math.random() <= mutationRate ? random.nextGaussian() * mutationStrength : 0;
 
                     for(int prevNeuron = 0; prevNeuron < NETWORK_LAYER_SIZES[layer - 1]; prevNeuron++){
-                        client.getNetwork().getWeights()[layer][prevNeuron][neuron] += Math.random() <= mutationRate ? random.nextGaussian() * MUTATION_STRENGTH : 0;
+                        client.getNetwork().getWeights()[layer][prevNeuron][neuron] += Math.random() <= mutationRate ? random.nextGaussian() * mutationStrength : 0;
                     }
                 }
             }
@@ -77,5 +77,13 @@ public class GeneticAlgorithm {
 
     public static void setMutationRate(double mutationRate) {
         GeneticAlgorithm.mutationRate = mutationRate;
+    }
+
+    public static double getMutationStrength() {
+        return mutationStrength;
+    }
+
+    public static void setMutationStrength(double mutationStrength) {
+        GeneticAlgorithm.mutationStrength = mutationStrength;
     }
 }
