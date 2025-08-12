@@ -235,6 +235,7 @@ public class Game {
             while (score >= nextTarget) {
                 nextTarget *= 1.5;
                 GeneticAlgorithm.setMutationRate(GeneticAlgorithm.getMutationRate() * 0.9);
+                GeneticAlgorithm.setMutationStrength(GeneticAlgorithm.getMutationStrength() * 0.9);
             }
 
             GeneticAlgorithm.evolve(clients);
@@ -362,5 +363,4 @@ public class Game {
     public Pane getRoot(){
         return root;
     }
-
 }
