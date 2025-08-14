@@ -11,7 +11,6 @@ public class FlappyBirdGA extends Application {
         double screenWidth = 600;
         double screenHeight = 500;
         Game game = new Game(screenWidth, screenHeight, 500, 5, 0.0003, -0.15, 30, -0.1, 3000);
-        game.start();
 
         Scene scene = new Scene(game.getRoot(), screenWidth, screenHeight, Color.SKYBLUE);
 
@@ -19,6 +18,8 @@ public class FlappyBirdGA extends Application {
         stage.setResizable(false);
         stage.setTitle("Flappy Bird");
         stage.show();
+
+        game.start();
     }
 
     public static void main(String[] args) {
