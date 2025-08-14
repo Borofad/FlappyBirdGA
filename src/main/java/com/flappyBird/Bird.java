@@ -1,3 +1,4 @@
+
 package com.flappyBird;
 
 import com.geneticAlgorithm.GeneticClient;
@@ -56,7 +57,6 @@ public class Bird implements GeneticClient {
 
     public void reset(double y) {
         this.y = y;
-        updateView();
         vy = 0;
         score = 0;
     }
