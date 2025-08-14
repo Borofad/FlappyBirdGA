@@ -27,14 +27,13 @@ public class Game {
     private int pipeIdx;
     private List<Pipe> pipesAhead;
     private List<Pipe> pipesBehind;
-    private List<Pipe> pipesToRender;
-    private List<Pipe> pipesToRemove;
     private double pipeWidth;
     private double pipeVX;
     private double pipeSpawnTime;
     private double pipeSpawnInterval;
 
     private Label scoreText;
+    private int prevScore = 0;
     private int score = 0;
     private int generalScore = 0;
     private int nextTarget = 10;
@@ -76,20 +75,6 @@ public class Game {
             clients.add(bird);
         }
 
-        pipePool = new ArrayList<>();
-        int pipes = (int) (Math.ceil((screenWidth + pipeWidth) / (-pipeVX * pipeSpawnInterval)));
-        for(int i = 0; i < pipes; i++){
-            pipePool.add(new Pipe(pipeWidth));
-        }
-
-        pipesAhead = new ArrayList<>();
-        pipesBehind = new ArrayList<>();
-        pipesToRender = new ArrayList<>();
-        pipesToRemove = new ArrayList<>();
-        this.pipeWidth = pipeWidth;
-        this.pipeVX = pipeVX;
-        this.pipeSpawnInterval = pipeSpawnInterval;
-
         scoreText = new Label("Score: 0");
         scoreText.setLayoutX(0.05 * screenWidth);
         scoreText.setLayoutY(0.05 * gameAreaHeight);
@@ -101,6 +86,20 @@ public class Game {
         gameArea.setPrefWidth(screenWidth);
         gameArea.setPrefHeight(gameAreaHeight);
         gameArea.setStyle("-fx-background-color: lightblue;");
+
+        pipePool = new ArrayList<>();
+        int pipes = (int) (Math.ceil((screenWidth + pipeWidth) / (-pipeVX * pipeSpawnInterval)));
+        for(int i = 0; i < pipes; i++){
+            Pipe pipe = new Pipe(pipeWidth);
+            pipePool.add(pipe);
+            gameArea.getChildren().add(pipe.getView());
+        }
+
+        pipesAhead = new ArrayList<>();
+        pipesBehind = new ArrayList<>();
+        this.pipeWidth = pipeWidth;
+        this.pipeVX = pipeVX;
+        this.pipeSpawnInterval = pipeSpawnInterval;
 
         speedSlider = new Slider(1, 100, 1);
         speedSlider.setShowTickMarks(true);
@@ -147,6 +146,8 @@ public class Game {
         gameLoop = new AnimationTimer() {
             @Override
             public void handle(long l) {
+                updateView();
+
                 if(lastTime == 0){
                     lastTime = l;
                     return;
@@ -167,8 +168,6 @@ public class Game {
 
                     accumulator -= FIXED_MS_STEP;
                 }
-
-                updateView();
             }
         };
     }
@@ -190,10 +189,17 @@ public class Game {
             pipe.updatePhysics(FIXED_MS_STEP, pipeVX);
 
             if (pipe.isOffScreen(pipeWidth)) {
-                if(!pipesToRender.remove(pipe)) pipesToRemove.add(pipe);
-
                 pipesBehindIterator.remove();
             }
+        }
+
+        if (!birds.isEmpty() && !pipesAhead.isEmpty() && checkThrough(pipesAhead.get(0))) {
+            score++;
+            generalScore += birds.size();
+
+            for(Bird bird : birds) bird.updateScore();
+
+            pipesBehind.add(pipesAhead.remove(0));
         }
 
         Iterator<Bird> birdIterator = birds.iterator();
@@ -202,7 +208,7 @@ public class Game {
 
             boolean died = false;
 
-            if (bird.getNetwork().calculate(new double[] {bird.getVY(), bird.getY(), pipesAhead.get(0).getX() - 0.2 * screenWidth, pipesAhead.get(0).getTopPipe().getHeight(), pipesAhead.get(0).getBottomPipe().getHeight()})[0] >= 0.5) {
+            if (bird.getNetwork().calculate(new double[] {bird.getVY(), bird.getY(), pipesAhead.get(0).getX() - 0.2 * screenWidth, pipesAhead.get(0).getTopH(), pipesAhead.get(0).getBottomH()})[0] >= 0.5) {
                 bird.flap(flapImpulse);
             }
 
@@ -220,20 +226,11 @@ public class Game {
             }
         }
 
-        if (!birds.isEmpty() && !pipesAhead.isEmpty() && checkThrough(pipesAhead.get(0))) {
-            scoreText.setText("Score: " + ++score);
-            generalScore += birds.size();
-
-            for(Bird bird : birds) bird.updateScore();
-
-            pipesBehind.add(pipesAhead.remove(0));
-        }
-
         if (birds.isEmpty()) {
             System.out.println("Gen: " + gen++ + ", Avg score: " + (double) generalScore / clients.size() + ", Max score: " + score);
 
             while (score >= nextTarget) {
-                nextTarget *= 1.5;
+                nextTarget *= 3;
                 GeneticAlgorithm.setMutationRate(GeneticAlgorithm.getMutationRate() * 0.9);
                 GeneticAlgorithm.setMutationStrength(GeneticAlgorithm.getMutationStrength() * 0.9);
             }
@@ -246,16 +243,16 @@ public class Game {
     }
 
     private void updateView() {
+        scoreText.toFront();
+        if(score != prevScore){
+            scoreText.setText("Score: " + score);
+            prevScore = score;
+        }
+
         for(Bird bird : birds){
+            if(!gameArea.getChildren().contains(bird.getView())) gameArea.getChildren().add(bird.getView());
+
             bird.updateView();
-        }
-
-        for(Pipe pipe : pipesAhead){
-            pipe.updateView();
-        }
-
-        for(Pipe pipe : pipesBehind){
-            pipe.updateView();
         }
 
         for(Bird bird : birdsToRemove){
@@ -263,39 +260,32 @@ public class Game {
         }
         birdsToRemove.clear();
 
-        for(Pipe pipe : pipesToRemove){
-            gameArea.getChildren().remove(pipe.getView());
-        }
-        pipesToRemove.clear();
+        for(Pipe pipe : pipePool){
+            if(!pipesBehind.contains(pipe) && !pipesAhead.contains(pipe)) pipe.setX(screenWidth);
 
-        for(Pipe pipe : pipesToRender){
-            gameArea.getChildren().add(pipe.getView());
+            pipe.updateView();
         }
-        pipesToRender.clear();
     }
 
     private void reset() {
         gameLoop.stop();
 
-        gameArea.getChildren().clear();
-
         for (Bird bird : clients) {
             bird.reset(gameAreaHeight / 2);
         }
+        birdsToRemove.clear();
 
+        for(Pipe pipe : pipePool){
+            pipe.setX(screenWidth);
+        }
+        pipeIdx = 0;
         pipesBehind.clear();
         pipesAhead.clear();
-        pipesToRender.clear();
-        pipesToRemove.clear();
 
         score = 0;
         generalScore = 0;
-        scoreText.setText("Score: 0");
-        gameArea.getChildren().add(scoreText);
 
         lastTime = 0;
-
-        pipeIdx = 0;
     }
 
     private boolean checkThrough(Pipe pipe) {
@@ -308,10 +298,10 @@ public class Game {
         double r = bird.getView().getRadius();
 
         double px = pipe.getX();
-        double py1 = 0;
-        double py2 = pipe.getBottomPipe().getY();
-        double ph1 = pipe.getTopPipe().getHeight();
-        double ph2 = pipe.getBottomPipe().getHeight();
+        double py1 = pipe.getTopY();
+        double py2 = pipe.getBottomY();
+        double ph1 = pipe.getTopH();
+        double ph2 = pipe.getBottomH();
 
         return circleIntersectsRectangle(bx, by, r, px, py1, pipeWidth, ph1) || circleIntersectsRectangle(bx, by, r, px, py2, pipeWidth, ph2);
     }
@@ -333,16 +323,9 @@ public class Game {
         pipe.reset(x, gameAreaHeight);
 
         pipesAhead.add(pipe);
-        pipesToRender.add(pipe);
-
-        scoreText.toFront();
     }
 
     public void start(){
-        for (Bird bird : birds) {
-            gameArea.getChildren().add(bird.getView());
-        }
-
         double pipeGap = -pipeVX * pipeSpawnInterval;
         double firstPipeGap = (pipeWidth + pipeGap) / 2;
         double pipeSpawnArea = 0.8 * screenWidth - firstPipeGap;
@@ -351,11 +334,6 @@ public class Game {
             pipeSpawnArea -= pipeGap;
         }
         pipeSpawnTime = ((pipeGap + pipeSpawnArea) / pipeGap) * pipeSpawnInterval;
-
-        for(Pipe pipe : pipesToRender){
-            gameArea.getChildren().add(pipe.getView());
-        }
-        pipesToRender.clear();
 
         gameLoop.start();
     }
