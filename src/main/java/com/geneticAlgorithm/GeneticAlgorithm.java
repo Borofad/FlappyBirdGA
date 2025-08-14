@@ -5,7 +5,7 @@ import java.util.*;
 public class GeneticAlgorithm {
     private static final int SURVIVORS = 20;
     private static final int TOURNAMENT_SIZE = 3;
-    private static double mutationRate = 0.05;
+    private static double mutationRate = 0.1;
     private static double mutationStrength = 0.2;
     public static <T extends GeneticClient> void evolve(List<T> clients){
         Queue<T> pq = new PriorityQueue<>(Comparator.comparingInt(GeneticClient::getScore));
